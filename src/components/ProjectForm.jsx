@@ -1,27 +1,40 @@
-// src/components/ProjectForm.jsx
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-
-const ProjectForm = () => {
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
+const ProjectForm = ({ refreshProjects }) => {
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    // Handle form submission logic, e.g., saving project data
-    navigate('/projects');
-  };
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    const projectData = { title, description };
 
-  const handleCancel = () => {
-    navigate('/projects');
+    try {
+      const response = await fetch("http://localhost:5000/api/projects", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(projectData),
+      });
+
+      if (response.ok) {
+        console.log("Project added successfully.");
+        refreshProjects(); // Refresh the list of projects
+        navigate("/");     // Redirect to the project list
+      } else {
+        console.error("Failed to add project.");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+    }
   };
 
   return (
     <div>
-      <h2>Project Form</h2>
-      <form onSubmit={handleSubmit} style={{ width: '45%', margin: 'auto' }}>
+      <h2>Add a New Project</h2>
+      <form onSubmit={handleSubmit}>
         <div>
           <label>Title:</label>
           <input
@@ -37,10 +50,9 @@ const ProjectForm = () => {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             required
-          />
+          ></textarea>
         </div>
-        <button type="submit">Submit</button>
-        <button type="button" onClick={handleCancel}>Cancel</button>
+        <button type="submit">Add Project</button>
       </form>
     </div>
   );

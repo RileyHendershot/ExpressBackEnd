@@ -1,5 +1,3 @@
-// src/App.jsx
-
 import React, { useState } from "react";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import Footer from "./components/Footer";
@@ -21,44 +19,10 @@ const About = () => (
 );
 
 const App = () => {
-  // Initializing the projects state with two sample projects
-  const [projects, setProjects] = useState([
-    { id: 1, title: "Project 1", description: "This is the description for the first project" },
-    { id: 2, title: "Project 2", description: "This is the description for the second project" },
-  ]);
-  
-  const [currentProject, setCurrentProject] = useState(null);
-  const [isEditing, setIsEditing] = useState(false);
-
-  const handleAddProject = (project) => {
-    const newProject = {
-      id: projects.length + 1,
-      ...project,
-    };
-    setProjects([...projects, newProject]);
-  };
+  const [currentProject, setCurrentProject] = useState(null); // Track the project being edited
 
   const handleEditProject = (project) => {
     setCurrentProject(project);
-    setIsEditing(true);
-  };
-
-  const handleUpdateProject = (updatedProject) => {
-    setProjects((prev) =>
-      prev.map((proj) =>
-        proj.id === currentProject.id ? { ...proj, ...updatedProject } : proj
-      )
-    );
-    resetForm();
-  };
-
-  const handleDeleteProject = (id) => {
-    setProjects(projects.filter((project) => project.id !== id));
-  };
-
-  const resetForm = () => {
-    setCurrentProject(null);
-    setIsEditing(false);
   };
 
   return (
@@ -72,17 +36,68 @@ const App = () => {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
-        <Route 
-          path="/projects" 
-          element={<ProjectList projects={projects} onEdit={handleEditProject} onDelete={handleDeleteProject} />} 
+        <Route
+          path="/projects"
+          element={
+            <ProjectList
+              onEdit={handleEditProject} // Handle setting the current project for editing
+            />
+          }
         />
-        <Route 
-          path="/projects/form" 
-          element={<ProjectFormPage onSubmit={handleAddProject} />} 
+        <Route
+          path="/projects/form"
+          element={
+            <ProjectFormPage
+              onSubmit={(project) => {
+                return fetch("http://localhost:5000/api/projects", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify(project),
+                })
+                  .then((response) => {
+                    if (!response.ok) {
+                      throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                  })
+                  .then(() => {
+                    // Redirect to project list after successful addition
+                    window.location.href = "/projects";
+                  })
+                  .catch((error) => console.error("Error adding project:", error));
+              }}
+            />
+          }
         />
-        <Route 
-          path="/projects/form/:id" 
-          element={<ProjectFormPage existingProject={currentProject} onSubmit={handleUpdateProject} />} 
+        <Route
+          path="/projects/form/:id"
+          element={
+            <ProjectFormPage
+              existingProject={currentProject}
+              onSubmit={(updatedProject) => {
+                return fetch(`http://localhost:5000/api/projects/${currentProject.id}`, {
+                  method: "PUT",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify(updatedProject),
+                })
+                  .then((response) => {
+                    if (!response.ok) {
+                      throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                  })
+                  .then(() => {
+                    // Redirect to project list after successful update
+                    window.location.href = "/projects";
+                  })
+                  .catch((error) => console.error("Error updating project:", error));
+              }}
+            />
+          }
         />
       </Routes>
       <Footer />
